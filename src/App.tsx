@@ -9,8 +9,48 @@ function App() {
   const [messages, setMessages] = useState<string[]>([]);
   const [message, setMessage] = useState<string>('');
   const [ws, setWs] = useState<WebSocket | null>(null);
+  // const [cookieValue, setCookieValue] = useState(null);
+  const [cookieStatus, setCookieStatus] = useState('Not checked');
+
+  const checkCookie = () => {
+    // const cookieName = 'authToken';
+    const cookieName = 'sessionId';
+    const cookies = document.cookie.split('; ');
+    const cookie = cookies.find(row => row.startsWith(`${cookieName}=`));
+    return cookie ? cookie.split('=')[1] : null;
+  };
+
+  const generateCookie = async () => {
+    try {
+      const response = await fetch('http://localhost:3030/', {
+        method: 'GET',
+        credentials: 'include',
+      });
+
+
+      if (response.ok) {
+        setCookieStatus('Cookie should be set');
+      } else {
+        setCookieStatus('Failed to set cookie');
+      }
+    } catch (error) {
+      setCookieStatus('Error occurred');
+    }
+  }
+
 
   useEffect(() => {
+
+    const token = checkCookie();
+    if (token) {
+      console.log('Cookie found:', token);
+      // Proceed with authenticated user logic
+    } else {
+      console.log('No cookie found, begin create cookie');
+      generateCookie()
+      // Handle unauthenticated user logic
+    }
+
     const socket = new WebSocket('ws://localhost:3030')
     setWs(socket);
 
@@ -25,7 +65,13 @@ function App() {
   }, [])
 
   const sendMessage = () => {
+    console.log("triggeresdd")
     if (ws && ws.readyState === WebSocket.OPEN && message.trim()) {
+      ws.send(message);
+      setMessage('')
+    }
+    else if (ws && message) {
+      console.log("triggerr send")
       ws.send(message);
       setMessage('')
     }
